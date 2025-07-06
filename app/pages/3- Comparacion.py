@@ -29,6 +29,11 @@ def buscar_hoja(hojas, clave):
             return hojas[nombre]
     return pd.DataFrame()
 
+
+
+def extraer_valor(df):
+    return df["level"].iloc[0] if "level" in df.columns and not df.empty else None
+
 if all([file_min_costos, file_max_entropia, file_min_var, file_max_demanda]):
     dfs = {}
     files = {
@@ -62,14 +67,13 @@ if all([file_min_costos, file_max_entropia, file_min_var, file_max_demanda]):
         "Cantidad de Terminales habilitados": [],
         "Tipos de modo utilizados": []
     }
-    
+
 
     flujos_tipo = ["x_direct", "x_terminal_t", "x_terminal_s", "xt_tren", "xf_fluvial", "xc_carretera"]
     flujos_usados = {ft: [] for ft in flujos_tipo}
     print("cleaar")
     for obj in objetivos:
         hojas = dfs[obj]
-
         z = hojas.get("z", pd.DataFrame()).get("level", [None])[0]
         ent = hojas.get("ent", pd.DataFrame()).get("level", [None])[0]
         var = hojas.get("varianza", pd.DataFrame()).get("level", [None])[0]
@@ -123,5 +127,57 @@ if all([file_min_costos, file_max_entropia, file_min_var, file_max_demanda]):
     st.subheader("🚚 Tabla comparativa de flujos utilizados")
     st.dataframe(df_flujos, use_container_width=True)
     
+    st.markdown("---")
+    st.subheader("🔍 Ver detalle de una solución individual")
+
+    opcion = st.selectbox("Selecciona una solución para explorar en detalle:", objetivos)
+
+    if opcion:
+        st.markdown(f"### 📌 Detalle para: **{opcion}**")
+
+        hojas = dfs[opcion]
+        
+        # Mostrar indicadores
+        z = hojas.get("z", pd.DataFrame()).get("level", [None])[0]
+        ent = hojas.get("ent", pd.DataFrame()).get("level", [None])[0]
+        var = hojas.get("varianza", pd.DataFrame()).get("level", [None])[0]
+        perte = hojas.get("perte", pd.DataFrame()).get("level", [None])[0]
+
+        col1, col2, col3, col4 = st.columns(4)
+        col1.metric("💰 Costo (Z)", round(z, 2) if pd.notnull(z) else "N/A")
+        col2.metric("🔀 Entropía", round(ent, 2) if pd.notnull(ent) else "N/A")
+        col3.metric("📉 Varianza", round(var, 2) if pd.notnull(var) else "N/A")
+        col4.metric("📦 Demanda cubierta", round(perte, 2) if pd.notnull(perte) else "N/A")
+
+        st.markdown("#### 🧩 Tablas de terminales y rutas combinadas")
+
+        yt = buscar_hoja(hojas, "yt")
+        ys = buscar_hoja(hojas, "ys")
+        yst = buscar_hoja(hojas, "yst")
+
+        with st.expander("🏗 Terminales T habilitados (yt)"):
+            st.dataframe(yt[yt.get("level", 0) > 0.5] if not yt.empty else "No disponible")
+
+        with st.expander("🏗 Terminales S habilitados (ys)"):
+            st.dataframe(ys[ys.get("level", 0) > 0.5] if not ys.empty else "No disponible")
+
+        with st.expander("🔗 Rutas TS habilitadas (yst)"):
+            st.dataframe(yst[yst.get("level", 0) > 0.5] if not yst.empty else "No disponible")
+
+        st.markdown("#### 🚛 Tablas de flujos utilizados por tipo")
+
+        flujos_tipo = ["x_direct", "x_terminal_t", "x_terminal_s", "xt_tren", "xf_fluvial", "xc_carretera"]
+        for tipo in flujos_tipo:
+            hoja_flujo = hojas.get(tipo, pd.DataFrame())
+            if not hoja_flujo.empty and "level" in hoja_flujo.columns:
+                con_datos = hoja_flujo[hoja_flujo["level"] > 0]
+                with st.expander(f"📦 {tipo} ({len(con_datos)} flujos utilizados)"):
+                    st.dataframe(con_datos)
+            else:
+                with st.expander(f"📦 {tipo}"):
+                    st.info("No se encontraron datos en esta hoja.")
+        
+
+
 else:
     st.warning("📌 Sube los 4 archivos para ver la comparación.")
