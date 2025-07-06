@@ -191,5 +191,50 @@ if all([file_min_costos, file_max_entropia, file_min_var, file_max_demanda]):
                         fig, ax = plt.subplots(figsize=(10, 6))
                         nx.draw(G, pos, with_labels=True, node_size=1200, node_color="lightblue", ax=ax)
                         st.pyplot(fig)
+                    elif tipo in ["xt_tren", "xf_fluvial", "xc_carretera"] and st.button(f"🔁 Mostrar grafo de {tipo}"):
+                        df = hoja[hoja["level"] > 0]
+                        
+                        # Asegúrate de que tenga al menos 5 columnas
+                        if not df.empty and df.shape[1] >= 5:
+                            # Renombra para facilitar
+                            df = df.rename(columns={
+                                df.columns[0]: "origen",
+                                df.columns[1]: "destino",
+                                df.columns[2]: "terminal_t",
+                                df.columns[3]: "terminal_s"
+                            })
+
+                            G = nx.DiGraph()
+
+                            for _, row in df.iterrows():
+                                i, j, t, s = row["origen"], row["destino"], row["terminal_t"], row["terminal_s"]
+                                G.add_edge(i, t)
+                                G.add_edge(t, s)
+                                G.add_edge(s, j)
+
+                            # Extraer nodos únicos
+                            nodos_i = df["origen"].unique().tolist()
+                            nodos_t = df["terminal_t"].unique().tolist()
+                            nodos_s = df["terminal_s"].unique().tolist()
+                            nodos_j = df["destino"].unique().tolist()
+
+                            pos = {}
+                            for idx, n in enumerate(nodos_i):
+                                pos[n] = (0, -idx)
+                            for idx, n in enumerate(nodos_t):
+                                pos[n] = (1, -idx)
+                            for idx, n in enumerate(nodos_s):
+                                pos[n] = (2, -idx)
+                            for idx, n in enumerate(nodos_j):
+                                pos[n] = (3, -idx)
+
+                            fig, ax = plt.subplots(figsize=(12, 6))
+                            nx.draw(G, pos, with_labels=True, node_size=1500, node_color="lightblue", arrows=True, ax=ax)
+                            st.pyplot(fig)
+                        else:
+                            st.warning(f"❗ La hoja '{tipo}' no tiene datos suficientes para graficar.")
+
+                    
+                    
 else:
     st.warning("📌 Sube los 4 archivos para ver la comparación.")
