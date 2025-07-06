@@ -33,6 +33,96 @@ def buscar_hoja(hojas, clave):
 def extraer_valor(df):
     return df["level"].iloc[0] if "level" in df.columns and not df.empty else None
 
+import networkx as nx
+import matplotlib.pyplot as plt
+from matplotlib.patches import Patch
+
+def graficar_flujo_completo(hojas):
+    G = nx.DiGraph()
+    colores = {
+    "x_direct": "#c0c0c0",
+    "x_terminal_t": "#000080",
+    "x_terminal_s": "#008080",
+    "xt_tren": "#ff0000",
+    "xf_fluvial": "#ff00ff",
+    "xc_carretera": "#008000",
+    }
+
+
+    pos = {}
+    layer_offset = {"I": 0, "T": 1, "S": 2, "J": 3}
+    nodos_por_capa = {"I": set(), "T": set(), "S": set(), "J": set()}
+
+    for tipo, color in colores.items():
+        df = hojas.get(tipo, None)
+        if df is None or "level" not in df.columns:
+            continue
+        activos = df[df["level"] > 0]
+
+        if tipo == "x_direct":
+            activos = activos.rename(columns={"Unnamed: 0": "i", "Unnamed: 1": "j"})
+            for _, row in activos.iterrows():
+                i, j = row["i"], row["j"]
+                G.add_edge(i, j, color=color)
+                nodos_por_capa["I"].add(i)
+                nodos_por_capa["J"].add(j)
+
+        elif tipo in ["x_terminal_t", "x_terminal_s"]:
+            activos = activos.rename(columns={"Unnamed: 0": "i", "Unnamed: 1": "j", "Unnamed: 2": "t"})
+            for _, row in activos.iterrows():
+                i, j, t = row["i"], row["j"], row["t"]
+                G.add_edge(i, t, color=color)
+                G.add_edge(t, j, color=color)
+                nodos_por_capa["I"].add(i)
+                if tipo == "x_terminal_t":
+                    nodos_por_capa["T"].add(t)
+                else:
+                    nodos_por_capa["S"].add(t)
+                nodos_por_capa["J"].add(j)
+
+        elif tipo in ["xt_tren", "xf_fluvial", "xc_carretera"]:
+            activos = activos.rename(columns={
+                activos.columns[0]: "i",
+                activos.columns[1]: "j",
+                activos.columns[2]: "t",
+                activos.columns[3]: "s"
+            })
+            for _, row in activos.iterrows():
+                i, j, t, s = row["i"], row["j"], row["t"], row["s"]
+                G.add_edge(i, t, color=color)
+                G.add_edge(t, s, color=color)
+                G.add_edge(s, j, color=color)
+                nodos_por_capa["I"].add(i)
+                nodos_por_capa["T"].add(t)
+                nodos_por_capa["S"].add(s)
+                nodos_por_capa["J"].add(j)
+
+    # Posiciones por capas
+    for capa, nodos in nodos_por_capa.items():
+        offset = layer_offset[capa]
+        for idx, nodo in enumerate(sorted(nodos)):
+            pos[nodo] = (offset, -idx)
+
+    # Dibujar grafo
+    fig, ax = plt.subplots(figsize=(14, 8))
+    colores_aristas = [d["color"] for _, _, d in G.edges(data=True)]
+    nx.draw(
+        G, pos,
+        with_labels=True,
+        node_size=1500,
+        node_color="#b0dfea",  # color celeste suave
+        edge_color=colores_aristas,
+        arrows=True,
+        ax=ax
+    )
+
+    # Agregar leyenda
+    leyenda = [Patch(color=color, label=tipo) for tipo, color in colores.items()]
+    ax.legend(handles=leyenda, title="Tipos de flujo", loc="upper left", bbox_to_anchor=(1, 1))
+
+    return fig
+
+
 if all([file_min_costos, file_max_entropia, file_min_var, file_max_demanda]):
     dfs = {}
     files = {
@@ -233,6 +323,10 @@ if all([file_min_costos, file_max_entropia, file_min_var, file_max_demanda]):
                             st.pyplot(fig)
                         else:
                             st.warning(f"❗ La hoja '{tipo}' no tiene datos suficientes para graficar.")
+        if st.button("🌐 Mostrar red completa de todos los flujos combinados"):
+            fig = graficar_flujo_completo(hojas)  # tú defines esta función
+            st.pyplot(fig)
+
 
                     
                     
