@@ -1,4 +1,3 @@
-
 # 🚛 MULTIMOORA - Transporte Intermodal
 
 Este proyecto forma parte de la tesis de título desarrollada por Catalina Soto Pavez y Antonia Novoa. El trabajo propone un modelo de análisis multicriterio aplicado al contexto del **transporte intermodal**, utilizando el método **MULTIMOORA** para comparar distintas funciones objetivo en la toma de decisiones estratégicas.
@@ -9,7 +8,16 @@ Desarrollar una herramienta web interactiva que permita:
 
 1. Transformar automáticamente resultados de modelos GAMS en archivos `.csv` estandarizados.
 2. Aplicar el método MULTIMOORA a distintos escenarios y funciones objetivo.
-3. Explorar el paso a paso de los métodos RS (Ratio System), RP (Reference Point) y FMF (Full Multiplicative Form).
+3. Explorar visualmente las soluciones intermodales obtenidas, con tablas, KPIs y grafos.
+4. Visualizar el paso a paso de los métodos RS (Ratio System), RP (Reference Point) y FMF (Full Multiplicative Form).
+
+---
+
+## 🌐 Deploy público
+
+La plataforma está disponible en:
+
+🔗 [https://intermoora.streamlit.app/](https://intermoora.streamlit.app/)
 
 ---
 
@@ -31,13 +39,13 @@ Desarrollar una herramienta web interactiva que permita:
   - ✴️ Full Multiplicative Form (FMF)
 - Resultados finales y rankings comparativos.
 
----
+### 3️⃣ Comparación de soluciones intermodales
 
-## 🧪 Tecnologías utilizadas
-
-- [Streamlit](https://streamlit.io/) para la interfaz web.
-- [Pandas](https://pandas.pydata.org/) para manejo de datos.
-- Python 3.11+
+- Visualización de indicadores clave (`z`, `ent`, `varianza`, `lambda`).
+- Tablas de flujos utilizados por tipo y terminales activadas.
+- Representación gráfica de la red de transporte:
+  - Por tipo de flujo: directo, con terminales T/S, o entre terminales.
+  - Visualización consolidada de toda la red, con colores por modo (carretera, tren, fluvial).
 
 ---
 
@@ -45,12 +53,28 @@ Desarrollar una herramienta web interactiva que permita:
 
 ```
 📂 app/
-├── 1_HOME.py              # Página de inicio de la plataforma
-├── 2_GAMS_TO_CSV.py       # Conversor GAMS ➜ CSV
-├── 3_MULTI.py             # Módulo de análisis MULTIMOORA
+├── pages/
+│   ├── 1- GAMS_TO_CSV.py              # Conversor de resultados GAMS
+│   ├── 2- Análisis MULTIMOORA.py      # Implementación interactiva de MULTIMOORA
+│   ├── 3- Comparacion.py              # Comparación visual y grafo de soluciones
+│
 ├── utils/
-│   └── utils.py           # Funciones de limpieza, normalización y MULTIMOORA
+│   ├── utils.py                       # Funciones auxiliares y visualización
+│   └── __pycache__/
+│
+📄 requirements.txt
+📄 README.md
+📄 .streamlit/config.toml
 ```
+
+---
+
+## 🧪 Tecnologías utilizadas
+
+- [Streamlit](https://streamlit.io/) para la interfaz web.
+- [Pandas](https://pandas.pydata.org/) para manejo de datos.
+- [NetworkX](https://networkx.org/) y [Matplotlib](https://matplotlib.org/) para visualización de grafos.
+- Python 3.11+
 
 ---
 
